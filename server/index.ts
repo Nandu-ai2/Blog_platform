@@ -4,6 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { registerRoutes } from "./routes";
 import { log } from "./vite";
+import http from "http";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -42,7 +43,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  const server = await registerRoutes(app);
+  await registerRoutes(app);
 
   // Error handler
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -52,27 +53,45 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // ✅ Serve frontend build (dist/public after Vite build)
+  // ✅ Serve frontend build
   const distPath = path.join(__dirname, "public");
   app.use(express.static(distPath));
 
-  // ✅ Catch-all route → return index.html for React SPA
+  // ✅ Catch-all for SPA
   app.get("*", (_req, res) => {
     res.sendFile(path.join(distPath, "index.html"));
   });
 
-  // Port & host
-  const port = parseInt(process.env.PORT || "5000", 10);
+  // ✅ Create actual HTTP server
+  const server = http.createServer(app);
+
+  const defaultPort = 5000;
+  let port = parseInt(process.env.PORT || defaultPort.toString(), 10);
   const isDev = process.env.NODE_ENV !== "production";
 
-  if (isDev) {
-    server.listen(port, "localhost", () => {
-      log(`🚀 Server running at http://localhost:${port}`);
-    });
-  } else {
-    // On Vercel → host binding handled automatically
-    server.listen(port, () => {
-      log(`🚀 Server running on port ${port} (Vercel handles host)`);
+  function bindServer(currentPort: number) {
+    server.listen(
+      currentPort,
+      isDev ? "localhost" : undefined,
+      () => {
+        if (isDev) {
+          log(`🚀 Server running at http://localhost:${currentPort}`);
+        } else {
+          log(`🚀 Server running on port ${currentPort} (Vercel handles host)`);
+        }
+      }
+    );
+
+    server.on("error", (err: any) => {
+      if (err.code === "EADDRINUSE") {
+        const nextPort = currentPort + 1;
+        log(`⚠️ Port ${currentPort} in use. Retrying on ${nextPort}...`);
+        server.close(() => bindServer(nextPort));
+      } else {
+        throw err;
+      }
     });
   }
+
+  bindServer(port);
 })();
