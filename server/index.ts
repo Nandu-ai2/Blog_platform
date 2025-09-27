@@ -1,9 +1,13 @@
-// Load environment variables from .env file
 import "dotenv/config";
-
 import express, { type Request, Response, NextFunction } from "express";
+import path from "path";
+import { fileURLToPath } from "url";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+import { log } from "./vite";
+import detect from "detect-port";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(express.json());
@@ -12,7 +16,7 @@ app.use(express.urlencoded({ extended: false }));
 // Logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
-  const path = req.path;
+  const pathUrl = req.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
   const originalResJson = res.json;
@@ -23,16 +27,14 @@ app.use((req, res, next) => {
 
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+    if (pathUrl.startsWith("/api")) {
+      let logLine = `${req.method} ${pathUrl} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
+      if (logLine.length > 120) {
+        logLine = logLine.slice(0, 119) + "…";
       }
-
       log(logLine);
     }
   });
@@ -51,21 +53,29 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // Dev vs Production mode
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
+  // Serve frontend build (dist/)
+  const distPath = path.join(__dirname, "../dist");
+  app.use(express.static(distPath));
 
-  // Port + Host logic
-  const port = parseInt(process.env.PORT || "5000", 10);
-
-  // ✅ Use localhost in dev (Windows-safe), 0.0.0.0 in production (Vercel/Linux)
-  const host =
-    app.get("env") === "development" ? "localhost" : "0.0.0.0";
-
-  server.listen({ port, host }, () => {
-    log(`🚀 Server running at http://${host}:${port}`);
+  // Catch-all route → return index.html for SPA
+  app.get("*", (_req, res) => {
+    res.sendFile(path.join(distPath, "index.html"));
   });
+
+  // Port & host
+  const defaultPort = parseInt(process.env.PORT || "5000", 10);
+  const isDev = process.env.NODE_ENV !== "production";
+
+  if (isDev) {
+    // 👇 find a free port if 5000 is in use
+    const port = await detect(defaultPort);
+    server.listen(port, "localhost", () => {
+      log(`🚀 Server running at http://localhost:${port}`);
+    });
+  } else {
+    // Vercel provides PORT automatically
+    server.listen(defaultPort, () => {
+      log(`🚀 Server running on port ${defaultPort} (Vercel handles host)`);
+    });
+  }
 })();
