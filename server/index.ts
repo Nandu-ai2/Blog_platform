@@ -4,7 +4,6 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { registerRoutes } from "./routes";
 import { log } from "./vite";
-import detect from "detect-port";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,7 +16,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use((req, res, next) => {
   const start = Date.now();
   const pathUrl = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+  let capturedJsonResponse: Record<string, any> | undefined;
 
   const originalResJson = res.json;
   res.json = function (bodyJson, ...args) {
@@ -53,29 +52,27 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // Serve frontend build (dist/)
-  const distPath = path.join(__dirname, "../dist");
+  // ✅ Serve frontend build (dist/public after Vite build)
+  const distPath = path.join(__dirname, "public");
   app.use(express.static(distPath));
 
-  // Catch-all route → return index.html for SPA
+  // ✅ Catch-all route → return index.html for React SPA
   app.get("*", (_req, res) => {
     res.sendFile(path.join(distPath, "index.html"));
   });
 
   // Port & host
-  const defaultPort = parseInt(process.env.PORT || "5000", 10);
+  const port = parseInt(process.env.PORT || "5000", 10);
   const isDev = process.env.NODE_ENV !== "production";
 
   if (isDev) {
-    // 👇 find a free port if 5000 is in use
-    const port = await detect(defaultPort);
     server.listen(port, "localhost", () => {
       log(`🚀 Server running at http://localhost:${port}`);
     });
   } else {
-    // Vercel provides PORT automatically
-    server.listen(defaultPort, () => {
-      log(`🚀 Server running on port ${defaultPort} (Vercel handles host)`);
+    // On Vercel → host binding handled automatically
+    server.listen(port, () => {
+      log(`🚀 Server running on port ${port} (Vercel handles host)`);
     });
   }
 })();
