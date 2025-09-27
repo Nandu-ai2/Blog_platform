@@ -1,0 +1,48 @@
+Web Developer - Assignment Overview
+
+Your task is to build a fully functional blog platform. The platform must be dynamic, fetching and rendering content directly from a
+database rather than relying on static, markdown-based files.
+
+Core Features
+Blog Pages:
+A homepage listing all blog posts. Each post should display its title, a short description, and the publish date.
+Individual post pages accessible via dynamic routes (e.g., [slug] or [id]).
+Database Integration:
+Utilize either PostgreSQL or MongoDB to store and manage blog post data.
+Ensure all database queries are optimized for performance and efficiency.
+User-Facing Functionality:
+Provide a search or filter mechanism (e.g., search by title, filter by tags).
+Technical Implementation
+API Layer
+Develop a basic REST API to expose the blog data. At minimum, include:
+1.GET /api/blogs → Returns a list of all blog posts (paginated).
+2.GET /api/blogs/[id] or GET /api/blogs/[slug] → Returns details of a single blog post.
+Deliverables
+A GitHub/GitLab repository containing the complete source code.
+A well-documented README.md file with the following information:
+1.A brief project overview.
+2.Clear and concise setup instructions for running the application locally.
+3.A list of all dependencies.
+4.Instructions for configuring environment variables and database setup.
+Disclosure of AI Tool Usage: If any AI tools (e.g., ChatGPT, GitHub Copilot) were used during development, you must include a
+clear record of their use, such as links or screenshots of relevant conversations. Failure to do so will result in disqualification.
+Bonus Points
+Additional credit will be given for:
+Admin Page: A simple admin interface to create and manage blog posts, including support for uploading photos.
+Rich Text Editing: Integration of a Markdown editor or rich-text editor for writing blog content
+Creativity: Beyond the core requirements, creativity is appreciated and encouraged to make your project stand out.
+Deployment: Host the application (e.g., on Vercel) and sharing a live demo link
+Images Support: Each blog can have multiple images in between the content, Added image support will make your project
+stand out.
+Evaluation Criteria
+Your submission will be evaluated based on the following:
+Functionality: The application must fully meet all specified requirements and operate without errors.
+Code Quality: The codebase should be clean, modular, and well-structured, adhering to industry best practices.
+Database Usage: The database schema must be well-designed, and all queries should be efficient and appropriately indexed.
+Next.js Practices: You must demonstrate a correct and justified application of Next.js features
+
+such as SSR, ISR, and API routes.
+
+Documentation: The README.md file must be clear, complete, and accurate, providing all necessary
+
+information for project setup and deployment.
